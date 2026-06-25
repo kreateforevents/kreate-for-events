@@ -9,9 +9,9 @@ export default function Home() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
-  const supabase = createClient();
 
   useEffect(() => {
+    const supabase = createClient();
     const checkAuth = async () => {
       const {
         data: { session },
@@ -21,7 +21,19 @@ export default function Home() {
     };
 
     checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setUser(null);
+  };
 
   if (loading) {
     return (
@@ -40,10 +52,7 @@ export default function Home() {
         <div>
           <p>Welcome, {user.email}!</p>
           <button
-            onClick={() => {
-              supabase.auth.signOut();
-              setUser(null);
-            }}
+            onClick={handleSignOut}
             style={{
               padding: '10px 20px',
               backgroundColor: '#3B82F6',
