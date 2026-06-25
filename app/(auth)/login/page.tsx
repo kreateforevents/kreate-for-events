@@ -1,85 +1,76 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import toast from 'react-hot-toast'
-import { createClient } from '@/lib/supabase/client'
-import { loginSchema, LoginFormData } from '@/lib/utils/validators'
-import Button from '@/components/ui/Button'
-import Input from '@/components/ui/Input'
-import Card from '@/components/ui/Card'
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 
 export default function LoginPage() {
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const router = useRouter();
+  const supabase = createClient();
 
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-  })
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
-  const onSubmit = async (data: LoginFormData) => {
-    setIsLoading(true)
-    try {
-      const supabase = createClient()
-      const { error } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      })
-      if (error) throw error
-      toast.success('Welcome back!')
-      router.push('/dashboard')
-      router.refresh()
-    } catch (error: any) {
-      toast.error(error.message ?? 'Failed to sign in')
-    } finally {
-      setIsLoading(false)
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+    } else {
+      router.push('/');
     }
-  }
+  };
 
   return (
-    <Card>
-      <Card.Body className="p-8">
-        <h2 className="text-xl font-bold text-neutral-900 mb-1">Sign in</h2>
-        <p className="text-sm text-neutral-500 mb-6">Welcome back to your workspace</p>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          <Input
-            label="Email address"
+    <div style={{ maxWidth: '400px', margin: '100px auto', padding: '2rem' }}>
+      <h1>Sign In</h1>
+      <form onSubmit={handleLogin}>
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem' }}>Email:</label>
+          <input
             type="email"
-            placeholder="you@example.com"
-            error={errors.email?.message}
-            {...register('email')}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
           />
-          <Input
-            label="Password"
+        </div>
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem' }}>Password:</label>
+          <input
             type="password"
-            placeholder="••••••••"
-            showPasswordToggle
-            error={errors.password?.message}
-            {...register('password')}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
           />
-
-          <div className="flex justify-end">
-            <Link href="/forgot-password" className="text-sm text-primary-600 hover:underline">
-              Forgot password?
-            </Link>
-          </div>
-
-          <Button type="submit" isLoading={isLoading} className="w-full">
-            Sign in
-          </Button>
-        </form>
-
-        <p className="text-sm text-neutral-500 text-center mt-6">
-          Don&apos;t have an account?{' '}
-          <Link href="/signup" className="text-primary-600 font-semibold hover:underline">
-            Sign up
-          </Link>
-        </p>
-      </Card.Body>
-    </Card>
-  )
+        </div>
+        {error && <p style={{ color: 'red', marginBottom: '1rem' }}>{error}</p>}
+        <button
+          type="submit"
+          disabled={loading}
+          style={{
+            width: '100%',
+            padding: '10px',
+            backgroundColor: '#3B82F6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+          }}
+        >
+          {loading ? 'Signing In...' : 'Sign In'}
+        </button>
+      </form>
+    </div>
+  );
 }
