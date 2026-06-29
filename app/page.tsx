@@ -9,31 +9,16 @@ export default function Home() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const supabase = createClient();
 
   useEffect(() => {
-    const supabase = createClient();
     const checkAuth = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user || null);
       setLoading(false);
     };
-
     checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-    });
-
-    return () => subscription.unsubscribe();
   }, []);
-
-  const handleSignOut = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    setUser(null);
-  };
 
   if (loading) {
     return (
@@ -51,20 +36,43 @@ export default function Home() {
       {user ? (
         <div>
           <p>Welcome, {user.email}!</p>
-          <button
-            onClick={handleSignOut}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#3B82F6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px',
-            }}
-          >
-            Sign Out
-          </button>
+          
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '2rem' }}>
+            <button
+              onClick={() => router.push('/dashboard')}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#3B82F6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+              }}
+            >
+              Go to Dashboard
+            </button>
+
+            <button
+              onClick={() => {
+                supabase.auth.signOut();
+                setUser(null);
+                router.push('/');
+              }}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#EF4444',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px',
+              }}
+            >
+              Sign Out
+            </button>
+          </div>
         </div>
       ) : (
         <div>
